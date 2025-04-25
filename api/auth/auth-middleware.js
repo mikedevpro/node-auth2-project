@@ -1,6 +1,21 @@
 const { JWT_SECRET } = require("../secrets"); // use this secret!
+const jwt = require("jsonwebtoken");
+
 
 const restricted = (req, res, next) => {
+  const token = req.headers.authorization;
+  if (token){
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+      if (err){
+        res.status(401).json({message: "Token invalid"});
+      } else {
+        req.decodedJwt = decoded;
+        next();
+      }
+    })
+  } else {
+    res.status(401).json({message: "Token required"});
+  }
   /*
     If the user does not provide a token in the Authorization header:
     status 401
@@ -19,6 +34,12 @@ const restricted = (req, res, next) => {
 }
 
 const only = role_name => (req, res, next) => {
+if (req.decodedJwt.role_name === role_name){
+  next();
+} else {
+  res.status(403).json({message: "This is not for you"});
+}
+      
   /*
     If the user does not provide a token in the Authorization header with a role_name
     inside its payload matching the role_name passed to this function as its argument:
@@ -33,6 +54,11 @@ const only = role_name => (req, res, next) => {
 
 
 const checkUsernameExists = (req, res, next) => {
+  if (req.body.username) {
+    next()
+  } else {
+    next({ status: 401, message: "Invalid credentials" })
+  }
   /*
     If the username in req.body does NOT exist in the database
     status 401
@@ -44,6 +70,19 @@ const checkUsernameExists = (req, res, next) => {
 
 
 const validateRoleName = (req, res, next) => {
+  if (req.body.role_name){
+    req.role_name = req.body.role_name.trim();
+    if (req.role_name === "admin"){
+      res.status(422).json({message: "Role name can not be admin"});
+    } else if (req.role_name.length > 32){
+      res.status(422).json({message: "Role name can not be longer than 32 chars"});
+    } else {
+      next();
+    }
+  } else {
+    req.role_name = "student";
+    next();
+  }
   /*
     If the role_name in the body is valid, set req.role_name to be the trimmed string and proceed.
 

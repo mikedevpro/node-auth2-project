@@ -1,5 +1,5 @@
 const { JWT_SECRET } = require("../secrets"); // use this secret!
-// const { findBy } = require("../users/users-model");
+const { findBy } = require("../users/users-model");
 const jwt = require("jsonwebtoken");
 
 
@@ -55,12 +55,8 @@ if (req.decodedJwt.role_name === role_name){
 }
 
 
-const checkUsernameExists = (req, res, next) => {
-  if (req.body.username) {
-    next()
-  } else {
-    next({ status: 401, message: "Invalid credentials" })
-  }
+const checkUsernameExists = async (req, res, next) => {
+  
   /*
     If the username in req.body does NOT exist in the database
     status 401
@@ -68,6 +64,17 @@ const checkUsernameExists = (req, res, next) => {
       "message": "Invalid credentials"
     }
   */
+    try {
+      const [user] = await findBy({ username: req.body.username })
+      if (!user) {
+        next({ status: 401, message: "Invalid credentials"})
+      } else {
+        req.user = user
+        next()
+      }
+    } catch (err) {
+      next(err)
+    }
 }
 
 

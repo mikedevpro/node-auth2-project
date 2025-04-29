@@ -1,4 +1,4 @@
-// const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const router = require("express").Router();
 const { checkUsernameExists, validateRoleName } = require('./auth-middleware');
